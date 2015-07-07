@@ -16,23 +16,33 @@ class ToolController():
         self.mainView = MainView(parent, -1)
         self.timer = wx.Timer(self.mainView)
 
-        fig = plt.figure(0)
-        
-        self.canvas = FigureCanvasWxAgg(self.mainView, -1, fig)
-        fig.canvas.mpl_connect('button_press_event', self.onClick)
+
+        fig1 = plt.figure(1, figsize=(16, 4.3), dpi = 80)
+        fig2 = plt.figure(2, figsize=(16, 4.3), dpi = 80)
+        self.valence_canvas = FigureCanvasWxAgg(self.mainView.valencePanel, -1, fig1)
+        self.arousal_canvas = FigureCanvasWxAgg(self.mainView.arousalPanel, -1, fig2)
+        #####
+        #BUG#
+        #####
+        fig1.canvas.mpl_connect('button_press_event', self.onClick)
+        fig2.canvas.mpl_connect('button_press_event', self.onClick)
         #will be moved to main view
-        self.mainView.sizer.Add(self.canvas, (1,6), span=(8,5))
-
-
-        self.connect()
+        #self.mainView.sizer.Add(self.canvas, (1,6), span=(8,5))
+        # self.mainView.valencePanel.Fit()
+        # self.mainView.arousalPanel.Fit()
+        
+        self.connect(parent)
         self.timer.Start(100)
         self.fps = 1
         self.previewImage = []
     
-    def connect(self):
-        self.mainView.Bind(wx.EVT_BUTTON, self.onLoadFile, self.mainView.loadButton)
+    def connect(self, parent):
+        
+        #binding the menu bar item
+        parent.Bind(wx.EVT_MENU, self.onLoadFile, self.mainView.loadButton)
+        parent.Bind(wx.EVT_MENU, self.exportToCSV, self.mainView.exportButton)
+        
         self.mainView.Bind(wx.EVT_BUTTON, self.onPlay, self.mainView.playButton)
-        self.mainView.Bind(wx.EVT_BUTTON, self.onPause, self.mainView.pauseButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.onStop, self.mainView.stopButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.showPreview, self.mainView.previewButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.show_current_position, self.mainView.showCurPosButton)
@@ -41,16 +51,23 @@ class ToolController():
         self.mainView.Bind(wx.EVT_BUTTON, self.add_quantile_section, self.mainView.addQuantileButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.remove_quantile_section, self.mainView.removeQuantileButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.interpolate, self.mainView.interpolateButton)
-        self.mainView.Bind(wx.EVT_BUTTON, self.exportToCSV, self.mainView.exportButton)
+        
         self.mainView.Bind(wx.EVT_SLIDER, self.onSeek, self.mainView.slider)
         self.mainView.Bind(wx.EVT_TIMER, self.onTimer)
- 
 
-
+        self.mainView.Bind(wx.EVT_CLOSE, self.on_close)
+        self.mainView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.plotChanged)
     
     def onPlay(self, evt):
-        self.mainView.mc.Play()
-    
+        state = self.mainView.mc.GetState()
+        #the video is in pause or stop state
+        if state == 0 or state == 1:
+            self.mainView.mc.Play()
+            self.mainView.playButton.SetLabel("Pause")
+        else:
+            self.mainView.mc.Pause()
+            self.mainView.playButton.SetLabel("Play")
+            
     def onPause(self, evt):
         self.mainView.mc.Pause()
     def onStop(self, evt):
@@ -93,14 +110,17 @@ class ToolController():
         if self.current_plotController > -1:
             del self.plotController
             self.plotController = []
-            plt.clf()
-        plotController = PlotController(1, self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT),'')
-        
-        fig = plt.figure(0)
+            fig1 = plt.figure(1)
+            fig2 = plt.figure(2)
+            fig1.clf()
+            fig2.clf()
+        valence_plotController = PlotController(1, self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT),'')
+        arousal_plotController = PlotController(2, self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT),'')
+        #fig1 = plt.figure(0)
         self.current_plotController = 0
-        self.plotController.append(plotController)
+        self.plotController.append(valence_plotController)
+        self.plotController.append(arousal_plotController)
         #self.toolbar =Toolbar(self.canvas)
-        self.plotController[0].set_visible(True)
         #self.mainView.SetSizer(self.mainView.sizer)
         self.mainView.Layout()
 
@@ -117,7 +137,7 @@ class ToolController():
     def show_current_position(self, evt):
         if self.current_plotController > -1:
             offset = self.mainView.mc.Tell()
-            current_frame = int(offset*self.fps/1000)
+            current_frame = offset*self.fps/1000
             self.plotController[self.current_plotController].showFramePos(current_frame)
 
     def add_quantile_section(self, evt):
@@ -154,9 +174,9 @@ class ToolController():
             self.mainView.add_check_box(_state)
             self.mainView.textField5.SetValue("")
 
-    def show_landmark(self, frame, state_list):
-        self.cv_capture.set(cv.CV_CAP_PROP_POS_FRAMES, frame)
-        pos = (frame / self.fps) * 1000
+    def show_landmark(self, current_frame, state_list):
+        self.cv_capture.set(cv.CV_CAP_PROP_POS_FRAMES, current_frame)
+        pos = self.cv_capture.get(cv.CV_CAP_PROP_POS_MSEC)
         self.mainView.mc.Seek(pos)
         for cb in self.mainView.stateCheckBox:
             index = self.mainView.stateCheckBox.index(cb)
@@ -165,35 +185,41 @@ class ToolController():
             else:
                 self.mainView.stateCheckBox[index].SetValue(False)
 
-    def add_or_show(self, current_frame, x, y, state_list):
-        offset = self.plotController[self.current_plotController].plotView.nframes * 0.005
-        for landmark in self.plotController[self.current_plotController].landmark_list:
-            if landmark[0] > x - offset and landmark[0] < x + offset and landmark[1] > y - offset and landmark[1] < y + offset:
-                #print "at frame %d"%(landmark[0])
-                self.show_landmark(landmark[0], landmark[3])
-                return
-        self.plotController[self.current_plotController].add_landmark(current_frame, y, state_list)
 
     def onClick(self, evt):
+        #self.current_plotController = self.mainView.plot_notebook.GetSelection()
         if self.current_plotController > -1 and evt.xdata and evt.ydata:
-            offset = self.mainView.mc.Tell()
-            self.cv_capture.set(cv.CV_CAP_PROP_POS_MSEC, offset)
+            pos = self.mainView.mc.Tell()
+            self.cv_capture.set(cv.CV_CAP_PROP_POS_MSEC, pos)
             current_frame = self.cv_capture.get(cv.CV_CAP_PROP_POS_FRAMES)
             state_list = []
-
-
+            audioflag = True
+            offset = self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT) * 0.002
+            print offset
+            temp_landmark = []
+            
+            for landmark in self.plotController[self.current_plotController].landmark_list:
+                if landmark[0] > evt.xdata - offset and landmark[0] < evt.xdata + offset and landmark[1] > evt.ydata - offset and landmark[1] < evt.ydata + offset:
+                    temp_landmark = landmark
+                    #print "landmark clicked!!"
+                    #print landmark
+                    break
+            #if left click
             if evt.button == 1:
                 for cb in self.mainView.stateCheckBox:
                     if cb.GetValue():
                         state_list.append(cb.GetLabel())
-            #if a landmark is clicked then show that frame
-            #else add new landmark
-            
-                self.add_or_show(current_frame, evt.xdata, evt.ydata, state_list)
+                #no landmark is clicked
+                if not temp_landmark:
+                    self.plotController[self.current_plotController].add_landmark(current_frame, evt.ydata, audioflag, state_list)
+                else:
+                    self.show_landmark(temp_landmark[0], temp_landmark[4])
+            #if right click
             else:
-                self.plotController[self.current_plotController].remove_landmark(evt.xdata, evt.ydata)
+                if temp_landmark:
+                    self.plotController[self.current_plotController].remove_landmark(landmark)
 
-        self.mainView.mc.SetFocus()
+
 #print self.plotController[self.current_plotController].landmark_list
 
 
@@ -205,7 +231,7 @@ class ToolController():
                     self.previewImage.remove(p)
         
             offset = self.mainView.mc.Tell()
-            k_frame = int(offset*self.fps/1000)
+            k_frame = offset*self.fps/1000
             if k_frame >= 2 * k:
                 k_frame = k_frame - 2 * k
             for i in range(0,5):
@@ -235,12 +261,22 @@ class ToolController():
             path = dlg.GetPath()
             self.plotController[self.current_plotController].exportData(path, 0)
 
+    def plotChanged(self, event):
+        self.current_plotController = self.mainView.plot_notebook.GetSelection()
+        event.Skip()
+
+
+
+    def on_close(self, evt):
+        evt.skip()
+        print "True"
+        exit()
 
 if __name__=='__main__':
     
     app = wx.App(False)
     # create a window/frame, no parent, -1 is default ID
-    frame = wx.Frame(None, -1, "Video Annotation Tool", size = (1280, 720))
+    frame = wx.Frame(None, -1, "Video Annotation Tool", size = (1280, 750))
     # call the derived class
     m = ToolController(frame, -1)
     frame.Show(1)

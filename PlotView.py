@@ -14,14 +14,13 @@ class PlotView:
         self.desc = _desc
         self.lower= _lower
         self.upper = _upper
-        fig = plt.figure(0)
-
-        #each plot view constructs an axes for figure 0
-        self.axes = fig.add_axes([.1,.1,.8,.8], label='videos id: %d'%(_id))
-        self.draw_axis()
+        fig = plt.figure(self.id)
         
-        self.set_visible(False)
-    
+        #each plot view constructs an axes for figure 0
+        self.axes = fig.add_axes([.05,.05,0.9,0.9], label='videos id: %d'%(_id))
+        self.axes.grid(True)
+        self.draw_axis()
+
 
 
 
@@ -38,7 +37,7 @@ class PlotView:
 
     def draw_landmark(self, x, y):
         self.axes.plot(x, y, 'or')
-        fig = plt.figure(0)
+        fig = plt.figure(self.id)
         fig.canvas.draw()
 
 
@@ -52,7 +51,7 @@ class PlotView:
         plt.yticks(np.linspace(-100,100,21))
         
         
-        fig = plt.figure(0)
+        fig = plt.figure(self.id)
         fig.canvas.draw()
     
     def draw_quantile_section(self, lower, upper, level='', color='yellow'):
@@ -63,13 +62,13 @@ class PlotView:
         c = collections.BrokenBarHCollection(xrange, yrange, facecolor=color, alpha = 0.1)
         self.axes.text(self.nframes/2, lower,level, fontsize=15, ha='center', alpha = 0.2)
         self.axes.add_collection(c)
-        fig = plt.figure(0)
+        fig = plt.figure(self.id)
         fig.canvas.draw()
 
     def draw_line(self, x1, y1, x2, y2):
         l =  Line2D([x1,x1],[y1,y2], linestyle='--',color = 'black')
         self.axes.add_line(l)
-        fig = plt.figure(0)
+        fig = plt.figure(self.id)
         fig.canvas.draw()
             
     def draw_curve(self, landmark_list = [], _kind = 'cubic'):
@@ -82,13 +81,14 @@ class PlotView:
         
         xnew = np.linspace(min(x), max(x), max(x))
         self.axes.plot(xnew,f(xnew),'-')
-        fig = plt.figure(0)
+        fig = plt.figure(self.id)
         fig.canvas.draw()
     
             
     def draw(self, quantile_section=[], landmark=[]):
         plt.cla()
         self.draw_axis()
+        self.axes.grid(True)
         #draw quantile sections
         for qs in quantile_section:
             self.draw_quantile_section(qs[0], qs[1], qs[2], qs[3])
@@ -107,11 +107,15 @@ if __name__ == '__main__':
     plt.rcParams["figure.figsize"] = fig_size
     view1 = PlotView(1,2339, 'Happy')
     view2 = PlotView(2,2339,'Arousal')
+    view1.set_visible(True)
     view2.set_visible(True)
     view2.draw_quantile_section(50,80,'pos', 'yellow')
     l = [[1,3],[8,22],[33,10],[40, 8],[59,12]]
-
+    
+    view1.draw_landmark(1000,50)
+    view2.draw_landmark(1000,-50)
     view2.draw_curve(l, 'cubic')
+    
     plt.show()
     view2.draw_quantile_section(-50,50,'regular', 'blue')
     view2.draw_quantile_section(80,100,'very pos','green')

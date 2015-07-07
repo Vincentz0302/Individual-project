@@ -15,20 +15,22 @@ class PlotController:
         self.landmark_list=[]
         self.state = []
 
-    def add_landmark(self, x,y, state=[]):
+    def add_landmark(self, current_frame, y, audioflag = False, state=[], ):
+        
         flag = False
         #if landmark is in a quantile section
         #use the level from that quantile section for this landmark
         #otherwise set the level to None
         qs_index = -1
         for qs in self.quantile_section:
-            if y >=qs[0] and y < qs[1]:
+            if y >=qs[3] and y < qs[3]:
                 qs_index = self.quantile_section.index(qs)
         for landmark in self.landmark_list:
-            if landmark[0] == x:
+            #print landmark
+            if int(landmark[0]) == int(current_frame):
                 index = self.landmark_list.index(landmark)
                 self.landmark_list[index][1] = round(y,2)
-                self.landmark_list[index][3] = state
+                self.landmark_list[index][4] = state
                 flag = True
                 break
         if flag:
@@ -38,17 +40,17 @@ class PlotController:
         else:
             #the landmark is newly added so just draw the landmark
 
-            self.landmark_list.append([int(x), round(y, 2), qs_index, state])
-            self.plotView.draw_landmark(int(x),y)
+            self.landmark_list.append([current_frame, round(y, 2), qs_index, audioflag, state])
+            self.plotView.draw_landmark(current_frame,round(y, 2))
 
                 
     def add_quantile_section(self,lower, upper, desc='', color='yellow'):
         self.quantile_section.append([lower, upper, desc, color])
         self.plotView.draw_quantile_section(lower, upper, desc, color)
         for landmark in self.landmark_list:
-            if landmark[1] >= lower and landmark[1] < upper:
+            if landmark[2] >= lower and landmark[2] < upper:
                 index = self.landmark_list.index(landmark)
-                self.landmark_list[index][2]= len(self.quantile_section) - 1
+                self.landmark_list[index][3]= len(self.quantile_section) - 1
 
     def add_state(self, _state):
         if _state not in self.state:
@@ -62,11 +64,9 @@ class PlotController:
             self.update()
             self.plotView.draw_curve(self.landmark_list, kind)
 
-    def remove_landmark(self, x, y):
-        offset = self.plotView.nframes * 0.005
-        for landmark in self.landmark_list:
-            if landmark[0] > x - offset and landmark[0] < x + offset and landmark[1] > y - offset and landmark[1] < y + offset:
-                self.landmark_list.remove(landmark)
+    def remove_landmark(self, landmark):
+
+        self.landmark_list.remove(landmark)
         self.update()
 
     
@@ -92,6 +92,7 @@ class PlotController:
     def showFramePos(self, current_frame):
         self.update()
         self.plotView.draw_line(current_frame, 100, current_frame, -100)
+
     def setPlotSize(self, width, height):
         pass
     
@@ -112,25 +113,28 @@ class PlotController:
             filewriter.writerow(self.state)
             for i in self.landmark_list:
                 row = []
-                for k in range(0,3):
+                row.append(i[5])
+                for k in range(0,4):
                     row.append(i[k])
-                for k in i[3]:
+                row.append()
+                for k in i[4]:
                     row.append(k)
                 filewriter.writerow(row)
+
+
+
 
 
 if __name__ == '__main__':
 
 
     pc1 = PlotController(1,200, 'Happy')
-    pc1.add_quantile_section(50,80,'pos', 'yellow')
-    pc1.add_quantile_section(-50,50,'regular', 'blue')
-    pc1.set_visible(True)
-    pc1.add_quantile_section(80,100,'very pos','green')
-    pc1.showFramePos(40)
-    pc1.showFramePos(80)
-    fig = plt.figure(0)
-    fig.canvas.draw()
+    #pc1.add_quantile_section(50,80,'pos', 'yellow')
+    #pc1.add_quantile_section(-50,50,'regular', 'blue')
+    #pc1.set_visible(True)
+    #pc1.add_quantile_section(80,100,'very pos','green')
+    #pc1.showFramePos(40)
+    #pc1.showFramePos(80)
     pc2 = PlotController(2, 500, 'Arousal')
     plt.show()
 
