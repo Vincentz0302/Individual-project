@@ -1,3 +1,4 @@
+import sys
 import matplotlib.pyplot as plt
 import matplotlib.collections as collections
 import numpy as np
@@ -15,7 +16,7 @@ class PlotController:
         self.landmark_list=[]
         self.state = []
 
-    def add_landmark(self, current_frame, y, audioflag = False, state=[], ):
+    def add_landmark(self, current_frame, y, audioflag = True, state=[], ):
         
         flag = False
         #if landmark is in a quantile section
@@ -23,10 +24,9 @@ class PlotController:
         #otherwise set the level to None
         qs_index = -1
         for qs in self.quantile_section:
-            if y >=qs[3] and y < qs[3]:
+            if y >=qs[0] and y < qs[1]:
                 qs_index = self.quantile_section.index(qs)
         for landmark in self.landmark_list:
-            #print landmark
             if int(landmark[0]) == int(current_frame):
                 index = self.landmark_list.index(landmark)
                 self.landmark_list[index][1] = round(y,2)
@@ -47,10 +47,13 @@ class PlotController:
     def add_quantile_section(self,lower, upper, desc='', color='yellow'):
         self.quantile_section.append([lower, upper, desc, color])
         self.plotView.draw_quantile_section(lower, upper, desc, color)
+        #print "update the quantile section"
         for landmark in self.landmark_list:
-            if landmark[2] >= lower and landmark[2] < upper:
+            #   print landmark
+            if landmark[1] >= lower and landmark[1] < upper:
                 index = self.landmark_list.index(landmark)
-                self.landmark_list[index][3]= len(self.quantile_section) - 1
+                self.landmark_list[index][2]= len(self.quantile_section) - 1
+            #    print "is in the bag"
 
     def add_state(self, _state):
         if _state not in self.state:
@@ -85,6 +88,7 @@ class PlotController:
         self.update()
     
     def update(self):
+
         self.plotView.draw(self.quantile_section, self.landmark_list)
     
 
@@ -112,29 +116,57 @@ class PlotController:
                 filewriter.writerow(row)
             filewriter.writerow(self.state)
             for i in self.landmark_list:
+                print i
                 row = []
-                row.append(i[5])
                 for k in range(0,4):
                     row.append(i[k])
-                row.append()
                 for k in i[4]:
                     row.append(k)
                 filewriter.writerow(row)
 
+    def exportConfigData(self, path):
+        pass
 
+    def importData(self, path, type = 0):
+        print self.quantile_section
+        with open(path, 'rb') as csvfile:
+            filereader = csv.reader(csvfile)
+            content = []
+            for row in filereader:
+                content.append(row)
+            try:
+                length = int(content[0][0])
+                temp_quantile_section = []
+                temp_state = []
+                temp_landmark = []
+                for i in range(1, length+1):
+                    temp_quantile_section.append([int(content[i][0]), int(content[i][1]), content[i][2], content[i][3]])
+                for state in content[length+1]:
+                    temp_state.append(state)
+                for i in range(length+2, len(content)):
+                    temp_landmark.append([float(content[i][0]), float(content[i][1]), int(content[i][2]), bool(content[i][3]), content[4]])
+            except:
+                    print "Error in reading this file"
+                    return
+            print temp_landmark
+            self.landmark_list = temp_landmark
+            self.quantile_section = temp_quantile_section
+            self.state = temp_state
 
-
-
+                                         
+                                         
 if __name__ == '__main__':
 
 
-    pc1 = PlotController(1,200, 'Happy')
-    #pc1.add_quantile_section(50,80,'pos', 'yellow')
-    #pc1.add_quantile_section(-50,50,'regular', 'blue')
-    #pc1.set_visible(True)
-    #pc1.add_quantile_section(80,100,'very pos','green')
-    #pc1.showFramePos(40)
-    #pc1.showFramePos(80)
-    pc2 = PlotController(2, 500, 'Arousal')
+    pc1 = PlotController(1,2000, 'Happy')
+    pc1.add_quantile_section(50,80,'pos', 'yellow')
+    pc1.add_quantile_section(-50,50,'regular', 'blue')
+    pc1.set_visible(True)
+    pc1.add_quantile_section(80,100,'very pos','green')
+    pc1.showFramePos(40)
+    pc1.showFramePos(80)
+    #pc2 = PlotController(2, 500, 'Arousal')
+    pc1.importData("/Users/zhangyuxun/Desktop/Project Data/python/valence.csv")
+    pc1.update()
     plt.show()
 

@@ -8,22 +8,21 @@ matplotlib.use('WXAgg')
 from PlotController import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_wxagg import Toolbar, FigureCanvasWxAgg
+from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg
 
 class ToolController():
     def __init__(self, parent, id):
         self.plotController = []
-        self.current_plotController = -1
+        self.current_plotController = 0
+        self.loadFlag = False
         self.mainView = MainView(parent, -1)
         self.timer = wx.Timer(self.mainView)
-
+        self.toolbar = []
 
         fig1 = plt.figure(1, figsize=(16, 4.3), dpi = 80)
         fig2 = plt.figure(2, figsize=(16, 4.3), dpi = 80)
         self.valence_canvas = FigureCanvasWxAgg(self.mainView.valencePanel, -1, fig1)
         self.arousal_canvas = FigureCanvasWxAgg(self.mainView.arousalPanel, -1, fig2)
-        #####
-        #BUG#
-        #####
         fig1.canvas.mpl_connect('button_press_event', self.onClick)
         fig2.canvas.mpl_connect('button_press_event', self.onClick)
         #will be moved to main view
@@ -107,7 +106,7 @@ class ToolController():
 
 
     def doLoadPlot(self):
-        if self.current_plotController > -1:
+        if self.loadFlag:
             del self.plotController
             self.plotController = []
             fig1 = plt.figure(1)
@@ -118,6 +117,7 @@ class ToolController():
         arousal_plotController = PlotController(2, self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT),'')
         #fig1 = plt.figure(0)
         self.current_plotController = 0
+        self.loadFlag = True
         self.plotController.append(valence_plotController)
         self.plotController.append(arousal_plotController)
         #self.toolbar =Toolbar(self.canvas)
@@ -135,13 +135,13 @@ class ToolController():
 
 
     def show_current_position(self, evt):
-        if self.current_plotController > -1:
+        if self.loadFlag:
             offset = self.mainView.mc.Tell()
             current_frame = offset*self.fps/1000
             self.plotController[self.current_plotController].showFramePos(current_frame)
 
     def add_quantile_section(self, evt):
-        if self.current_plotController != -1:
+        if self.loadFlag:
             raw_lower = self.mainView.textField1.GetValue().strip()
             raw_upper = self.mainView.textField2.GetValue().strip()
             raw_level = self.mainView.textField3.GetValue().strip()
@@ -170,9 +170,10 @@ class ToolController():
     def add_state(self, evt):
         _state = self.mainView.textField5.GetValue().strip()
         #there is a plot in UI, and successfully add state
-        if self.current_plotController > -1 and self.plotController[self.current_plotController].add_state(_state):
-            self.mainView.add_check_box(_state)
-            self.mainView.textField5.SetValue("")
+        if self.loadFlag:
+            if self.plotController[self.current_plotController].add_state(_state):
+                self.mainView.add_check_box(_state)
+                self.mainView.textField5.SetValue("")
 
     def show_landmark(self, current_frame, state_list):
         self.cv_capture.set(cv.CV_CAP_PROP_POS_FRAMES, current_frame)
@@ -188,14 +189,13 @@ class ToolController():
 
     def onClick(self, evt):
         #self.current_plotController = self.mainView.plot_notebook.GetSelection()
-        if self.current_plotController > -1 and evt.xdata and evt.ydata:
+        if self.loadFlag and evt.xdata and evt.ydata:
             pos = self.mainView.mc.Tell()
             self.cv_capture.set(cv.CV_CAP_PROP_POS_MSEC, pos)
             current_frame = self.cv_capture.get(cv.CV_CAP_PROP_POS_FRAMES)
             state_list = []
             audioflag = True
             offset = self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT) * 0.002
-            print offset
             temp_landmark = []
             
             for landmark in self.plotController[self.current_plotController].landmark_list:
@@ -225,7 +225,7 @@ class ToolController():
 
     def showPreview(self, evt):
         k = 5
-        if self.current_plotController > -1:
+        if self.loadFlag:
             if self.previewImage:
                 for p in self.previewImage:
                     self.previewImage.remove(p)
@@ -237,12 +237,12 @@ class ToolController():
             for i in range(0,5):
                 self.cv_capture.set(cv.CV_CAP_PROP_POS_FRAMES, k_frame)
                 ret, frame = self.cv_capture.read()
-                frame = cv2.resize(frame, (180, 135))
+                frame = cv2.resize(frame, (144, 108))
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 height, width = frame.shape[:2]
                 bmp = wx.BitmapFromBuffer(width, height, frame)
-                control = wx.StaticBitmap(self.mainView, -1, bmp)
-                control.SetPosition((1055, 15+135*i+10))
+                control = wx.StaticBitmap(self.mainView.infoPanel, -1, bmp)
+                control.SetPosition((5+(144+10) * i, 100))
                 self.previewImage.append(control)
                 k_frame = k_frame + k
             self.cv_capture.set(cv.CV_CAP_PROP_POS_MSEC, offset)
@@ -253,13 +253,25 @@ class ToolController():
 
 
     def exportToCSV(self, evt):
-        if self.current_plotController > -1:
+        if self.loadFlag:
             dlg = wx.FileDialog(self.mainView, "Save CSV file", "", "",
                                 "CSV files (*.csv)|*.csv", wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
             if dlg.ShowModal() == wx.ID_CANCEL:
                 return
             path = dlg.GetPath()
             self.plotController[self.current_plotController].exportData(path, 0)
+
+    def exportConfigData(self, evt):
+        pass
+
+
+    def importFromCSV(self, evt):
+        pass
+
+    def importConfigData(self, evt):
+        pass
+
+
 
     def plotChanged(self, event):
         self.current_plotController = self.mainView.plot_notebook.GetSelection()
