@@ -148,11 +148,11 @@ class PlotController:
             except:
                     print "Error in reading this file"
                     return
-            print temp_landmark
+#print temp_landmark
             self.landmark_list = temp_landmark
             self.quantile_section = temp_quantile_section
             self.state = temp_state
-
+            self.update()
                                          
                                          
 if __name__ == '__main__':
@@ -167,6 +167,5 @@ if __name__ == '__main__':
     pc1.showFramePos(80)
     #pc2 = PlotController(2, 500, 'Arousal')
     pc1.importData("/Users/zhangyuxun/Desktop/Project Data/python/valence.csv")
-    pc1.update()
     plt.show()
 

@@ -34,6 +34,7 @@ class MainView(wx.Panel):
         fileMenu = wx.Menu()
         self.loadButton = fileMenu.Append(wx.NewId(), "&Load Videos  (MPEG4, MPG supported)", "")
         self.exportButton = fileMenu.Append(wx.NewId(), "&Export landmark   (CSV format)", "")
+        self.importButton = fileMenu.Append(wx.NewId(), "&Import annotation file    (CSV format)")
         menuBar.Append(fileMenu, "&File")
         parent.SetMenuBar(menuBar)
         

@@ -40,6 +40,7 @@ class ToolController():
         #binding the menu bar item
         parent.Bind(wx.EVT_MENU, self.onLoadFile, self.mainView.loadButton)
         parent.Bind(wx.EVT_MENU, self.exportToCSV, self.mainView.exportButton)
+        parent.Bind(wx.EVT_MENU, self.importFromCSV, self.mainView.importButton)
         
         self.mainView.Bind(wx.EVT_BUTTON, self.onPlay, self.mainView.playButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.onStop, self.mainView.stopButton)
@@ -260,13 +261,22 @@ class ToolController():
                 return
             path = dlg.GetPath()
             self.plotController[self.current_plotController].exportData(path, 0)
-
+            dlg.Destroy
+            
     def exportConfigData(self, evt):
         pass
 
 
     def importFromCSV(self, evt):
-        pass
+        if self.loadFlag:
+            dlg = wx.FileDialog(self.mainView, message="Choose a csv file",
+                            defaultDir=os.getcwd(), defaultFile="",
+                            style=wx.OPEN | wx.CHANGE_DIR )
+            if dlg.ShowModal() == wx.ID_OK:
+                path = dlg.GetPath()
+                self.plotController[self.current_plotController].importData(path)
+                dlg.Destroy()
+
 
     def importConfigData(self, evt):
         pass
