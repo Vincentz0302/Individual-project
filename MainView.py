@@ -54,6 +54,7 @@ class MainView(wx.Panel):
         self.op_notebook = wx.Notebook(self, size = (810, 310))
         self.op_notebook.SetPosition((410, 5))
         
+        # video related information panel
         self.infoPanel = wx.Panel(self.op_notebook, -1, size = (800, 340))
         self.op_notebook.AddPage(self.infoPanel, "vid info")
         self.previewButton = wx.Button(self.infoPanel, -1, "Preview", pos = (5,5))
@@ -61,8 +62,8 @@ class MainView(wx.Panel):
         self.st_size = wx.StaticText(self.infoPanel, -1, size=(1,-1), pos = (605,5))
         self.st_len  = wx.StaticText(self.infoPanel, -1, size=(1,-1), pos = (605, 30))
         self.st_pos  = wx.StaticText(self.infoPanel, -1, size=(1,-1), pos = (605, 55))
-        self.volumeSlider = wx.Slider(self.infoPanel, -1, 0, 0, 0, size=(600, -1), pos =(5,55) )
-
+        self.volumeSlider = wx.Slider(self.infoPanel, -1, 0, 0, 0, size=(400, -1), pos =(5,55) )
+        self.audioOff = wx.CheckBox(self.infoPanel, -1, "Audio off", pos = (500, 55))
 
         self.annotationPanel = wx.Panel(self.op_notebook, -1, size = (800, 340))
         self.op_notebook.AddPage(self.annotationPanel, "annotate")

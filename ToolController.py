@@ -17,6 +17,7 @@ class ToolController():
         self.loadFlag = False
         self.mainView = MainView(parent, -1)
         self.timer = wx.Timer(self.mainView)
+        self.defaultVolume = 5
         self.toolbar = []
 
         fig1 = plt.figure(1, figsize=(16, 4.3), dpi = 80)
@@ -29,6 +30,8 @@ class ToolController():
         #self.mainView.sizer.Add(self.canvas, (1,6), span=(8,5))
         # self.mainView.valencePanel.Fit()
         # self.mainView.arousalPanel.Fit()
+
+        
         
         self.connect(parent)
         self.timer.Start(100)
@@ -53,11 +56,26 @@ class ToolController():
         self.mainView.Bind(wx.EVT_BUTTON, self.interpolate, self.mainView.interpolateButton)
         
         self.mainView.Bind(wx.EVT_SLIDER, self.onSeek, self.mainView.slider)
+        self.mainView.Bind(wx.EVT_SLIDER, self.setVolume, self.mainView.volumeSlider)
         self.mainView.Bind(wx.EVT_TIMER, self.onTimer)
 
         self.mainView.Bind(wx.EVT_CLOSE, self.on_close)
         self.mainView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.plotChanged)
     
+        self.mainView.Bind(wx.EVT_CHECKBOX, self.setAudioOff)
+    
+    def setAudioOff(self, evt):
+        if self.mainView.audioOff.GetValue:
+            self.mainView.volumeSlider.SetValue(0)
+            self.mainView.mc.SetVolume(0)
+    
+    def setVolume(self, evt):
+        volume = self.mainView.volumeSlider.GetValue()
+        self.mainView.mc.SetVolume(volume)
+        if volume == 0:
+            self.mainView.audioOff.SetValue(True)
+        else:
+            self.mainView.audioOff.SetValue(False)
     def onPlay(self, evt):
         state = self.mainView.mc.GetState()
         #the video is in pause or stop state
@@ -90,7 +108,6 @@ class ToolController():
         if dlg.ShowModal() == wx.ID_OK:
             path = dlg.GetPath()
             self.doLoadFile(path)
-            self.doLoadPlot()
             dlg.Destroy()
 
 
@@ -104,6 +121,13 @@ class ToolController():
             self.cv_capture = cv2.VideoCapture(path)
             self.fps = self.cv_capture.get(cv.CV_CAP_PROP_FPS)
             self.mainView.slider.SetRange(0, self.mainView.mc.Length())
+    
+            self.mainView.volumeSlider.SetRange(0, 100)
+            self.mainView.mc.SetVolume(self.defaultVolume)
+            self.mainView.volumeSlider.SetValue(self.defaultVolume)
+    
+    
+            self.doLoadPlot()
 
 
     def doLoadPlot(self):
@@ -195,7 +219,7 @@ class ToolController():
             self.cv_capture.set(cv.CV_CAP_PROP_POS_MSEC, pos)
             current_frame = self.cv_capture.get(cv.CV_CAP_PROP_POS_FRAMES)
             state_list = []
-            audioflag = True
+            audioflag = self.mainView.audioOff.GetValue()
             offset = self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT) * 0.002
             temp_landmark = []
             
