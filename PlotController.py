@@ -128,7 +128,6 @@ class PlotController:
         pass
 
     def importData(self, path, type = 0):
-        print self.quantile_section
         with open(path, 'rb') as csvfile:
             filereader = csv.reader(csvfile)
             content = []
@@ -141,10 +140,15 @@ class PlotController:
                 temp_landmark = []
                 for i in range(1, length+1):
                     temp_quantile_section.append([int(content[i][0]), int(content[i][1]), content[i][2], content[i][3]])
-                for state in content[length+1]:
-                    temp_state.append(state)
+                print "Finish loading quantile sections"
+                # if the states are not null
+                if content[length+1]:
+                    for state in content[length+1]:
+                        temp_state.append(state)
+                print "Finish loading states"
                 for i in range(length+2, len(content)):
-                    temp_landmark.append([float(content[i][0]), float(content[i][1]), int(content[i][2]), bool(content[i][3]), content[4]])
+                    print content[i]
+                    temp_landmark.append([float(content[i][0]), float(content[i][1]), int(content[i][2]), bool(content[i][3]), content[i][4]])
             except:
                     print "Error in reading this file"
                     return
