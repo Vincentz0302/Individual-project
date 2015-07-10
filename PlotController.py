@@ -125,7 +125,49 @@ class PlotController:
                 filewriter.writerow(row)
 
     def exportConfigData(self, path):
-        pass
+        with open(path, 'wb') as csvfile:
+            filewriter = csv.writer(csvfile, delimiter=',',
+                                    quoting=csv.QUOTE_MINIMAL)
+            length = len(self.quantile_section)
+            filewriter.writerow([length])
+            for i in self.quantile_section:
+                row = []
+                for k in range(0,4):
+                    row.append(i[k])
+                filewriter.writerow(row)
+            filewriter.writerow(self.state)
+
+
+    def importConfigData(self, path):
+        with open(path, 'rb') as csvfile:
+            filereader = csv.reader(csvfile)
+
+            content = []
+            for row in filereader:
+                content.append(row)
+            try:
+                length = int(content[0][0])
+                
+                origin_qs = self.quantile_section
+                origin_states = self.state
+                
+                self.quantile_section = []
+                self.state = []
+                self.update()
+                for i in range(1, length+1):
+                    self.add_quantile_section(int(content[i][0]), int(content[i][1]), content[i][2], content[i][3])
+                print "Finish loading quantile sections"
+                # if the states are not null
+                if content[length+1]:
+                    for state in content[length+1]:
+                        self.add_state(state)
+                print "Finish loading states"
+            except:
+                #roll back if fail to read
+                self.quantile_section = origin_qs
+                self.state = origin_states
+                self.update()
+
 
     def importData(self, path, type = 0):
         with open(path, 'rb') as csvfile:
@@ -152,7 +194,7 @@ class PlotController:
             except:
                     print "Error in reading this file"
                     return
-#print temp_landmark
+            #print temp_landmark
             self.landmark_list = temp_landmark
             self.quantile_section = temp_quantile_section
             self.state = temp_state

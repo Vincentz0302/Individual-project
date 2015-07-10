@@ -1,52 +1,93 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import wx
 
 
-# Some classes to use for the notebook pages.  Obviously you would
-# want to use something more meaningful for your application, these
-# are just for illustration.
-
-class PageOne(wx.Panel):
-    def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
-        t = wx.StaticText(self, -1, "This is a PageOne object", (20,20))
-
-class PageTwo(wx.Panel):
-    def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
-        t = wx.StaticText(self, -1, "This is a PageTwo object", (40,40))
-
-class PageThree(wx.Panel):
-    def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
-        t = wx.StaticText(self, -1, "This is a PageThree object", (60,60))
-
-
-class MainFrame(wx.Frame):
-    def __init__(self):
-        wx.Frame.__init__(self, None, title="Simple Notebook Example")
+class Example(wx.Frame):
+    
+    def __init__(self, *args, **kw):
+        super(Example, self).__init__(*args, **kw)
         
-        # Here we create a panel and a notebook on the panel
-        p = wx.Panel(self)
-        nb = wx.Notebook(p)
+        self.InitUI()
+    
+    def InitUI(self):
         
-        # create the page windows as children of the notebook
-        page1 = PageOne(nb)
-        page2 = PageTwo(nb)
-        page3 = PageThree(nb)
+        pnl = wx.Panel(self)
         
-        # add the pages to the notebook with the label to show on the tab
-        nb.AddPage(page1, "Page 1")
-        nb.AddPage(page2, "Page 2")
-        nb.AddPage(page3, "Page 3")
+        self.col = wx.Colour(0, 0, 0)
         
-        # finally, put the notebook in a sizer for the panel to manage
-        # the layout
-        sizer = wx.BoxSizer()
-        sizer.Add(nb, 1, wx.EXPAND)
-        p.SetSizer(sizer)
+        rtb = wx.ToggleButton(pnl, label='red', pos=(20, 25))
+        gtb = wx.ToggleButton(pnl, label='green', pos=(20, 60))
+        btb = wx.ToggleButton(pnl, label='blue', pos=(20, 100))
+        
+        self.cpnl  = wx.Panel(pnl, pos=(150, 20), size=(110, 110))
+        self.cpnl.SetBackgroundColour(self.col)
+        
+        rtb.Bind(wx.EVT_TOGGLEBUTTON, self.ToggleRed)
+        gtb.Bind(wx.EVT_TOGGLEBUTTON, self.ToggleGreen)
+        btb.Bind(wx.EVT_TOGGLEBUTTON, self.ToggleBlue)
+        
+        self.SetSize((300, 200))
+        self.SetTitle('Toggle buttons')
+        self.Centre()
+        self.Show(True)
+    
+    def ToggleRed(self, e):
+        
+        obj = e.GetEventObject()
+        isPressed = obj.GetValue()
+        
+        green = self.col.Green()
+        blue = self.col.Blue()
+        
+        if isPressed:
+            self.col.Set(255, green, blue)
+        else:
+            self.col.Set(0, green, blue)
+        
+        self.cpnl.SetBackgroundColour(self.col)
+        self.cpnl.Refresh()
+    
+    def ToggleGreen(self, e):
+        
+        obj = e.GetEventObject()
+        isPressed = obj.GetValue()
+        
+        red = self.col.Red()
+        blue = self.col.Blue()
+        
+        if isPressed:
+            self.col.Set(red, 255, blue)
+        else:
+            self.col.Set(red, 0, blue)
+        
+        self.cpnl.SetBackgroundColour(self.col)
+        self.cpnl.Refresh()
+    
+    def ToggleBlue(self, e):
+        
+        obj = e.GetEventObject()
+        isPressed = obj.GetValue()
+        
+        red = self.col.Red()
+        green = self.col.Green()
+        
+        if isPressed:
+            self.col.Set(red, green, 255)
+        else:
+            self.col.Set(red, green, 0)
+        
+        self.cpnl.SetBackgroundColour(self.col)
+        self.cpnl.Refresh()
 
 
-if __name__ == "__main__":
-    app = wx.App()
-    MainFrame().Show()
-    app.MainLoop()
+def main():
+    
+    ex = wx.App()
+    Example(None)
+    ex.MainLoop()
+
+
+if __name__ == '__main__':
+    main()

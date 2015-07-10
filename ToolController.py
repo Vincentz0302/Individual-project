@@ -17,7 +17,7 @@ class ToolController():
         self.loadFlag = False
         self.mainView = MainView(parent, -1)
         self.timer = wx.Timer(self.mainView)
-        self.defaultVolume = 5
+        self.currentVolume = 5
         self.toolbar = []
 
         fig1 = plt.figure(1, figsize=(16, 4.3), dpi = 80)
@@ -44,6 +44,10 @@ class ToolController():
         parent.Bind(wx.EVT_MENU, self.onLoadFile, self.mainView.loadButton)
         parent.Bind(wx.EVT_MENU, self.exportToCSV, self.mainView.exportButton)
         parent.Bind(wx.EVT_MENU, self.importFromCSV, self.mainView.importButton)
+        parent.Bind(wx.EVT_MENU, self.importConfigData, self.mainView.importConfigButton)
+        parent.Bind(wx.EVT_MENU, self.exportConfigData, self.mainView.exportConfigButton)
+        
+        
         
         self.mainView.Bind(wx.EVT_BUTTON, self.onPlay, self.mainView.playButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.onStop, self.mainView.stopButton)
@@ -65,17 +69,22 @@ class ToolController():
         self.mainView.Bind(wx.EVT_CHECKBOX, self.setAudioOff)
     
     def setAudioOff(self, evt):
-        if self.mainView.audioOff.GetValue:
+        if self.mainView.audioOff.GetValue():
             self.mainView.volumeSlider.SetValue(0)
             self.mainView.mc.SetVolume(0)
-    
+        else:
+            print self.currentVolume
+            self.mainView.volumeSlider.SetValue(self.currentVolume)
+            self.mainView.mc.SetVolume(self.currentVolume)
     def setVolume(self, evt):
         volume = self.mainView.volumeSlider.GetValue()
         self.mainView.mc.SetVolume(volume)
+        self.currentVolume = volume
         if volume == 0:
             self.mainView.audioOff.SetValue(True)
         else:
             self.mainView.audioOff.SetValue(False)
+
     def onPlay(self, evt):
         state = self.mainView.mc.GetState()
         #the video is in pause or stop state
@@ -123,8 +132,8 @@ class ToolController():
             self.mainView.slider.SetRange(0, self.mainView.mc.Length())
     
             self.mainView.volumeSlider.SetRange(0, 100)
-            self.mainView.mc.SetVolume(self.defaultVolume)
-            self.mainView.volumeSlider.SetValue(self.defaultVolume)
+            self.mainView.mc.SetVolume(self.currentVolume)
+            self.mainView.volumeSlider.SetValue(self.currentVolume)
     
     
             self.doLoadPlot()
@@ -213,6 +222,7 @@ class ToolController():
 
 
     def onClick(self, evt):
+        print "Click"
         #self.current_plotController = self.mainView.plot_notebook.GetSelection()
         if self.loadFlag and evt.xdata and evt.ydata:
             pos = self.mainView.mc.Tell()
@@ -285,10 +295,17 @@ class ToolController():
                 return
             path = dlg.GetPath()
             self.plotController[self.current_plotController].exportData(path, 0)
-            dlg.Destroy
+            dlg.Destroy()
             
     def exportConfigData(self, evt):
-        pass
+        if self.loadFlag:
+            dlg = wx.FileDialog(self.mainView, "Save config file", "", "",
+                                "CSV files (*.csv)|*.csv", wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+            if dlg.ShowModal() == wx.ID_CANCEL:
+                return
+            path = dlg.GetPath()
+            self.plotController[self.current_plotController].exportConfigData(path)
+            dlg.Destroy()
 
 
     def importFromCSV(self, evt):
@@ -303,8 +320,14 @@ class ToolController():
 
 
     def importConfigData(self, evt):
-        pass
-
+        if self.loadFlag:
+            dlg = wx.FileDialog(self.mainView, message="Choose a configuration csv file",
+                                defaultDir=os.getcwd(), defaultFile="",
+                                style=wx.OPEN | wx.CHANGE_DIR )
+            if dlg.ShowModal() == wx.ID_OK:
+                path = dlg.GetPath()
+                self.plotController[self.current_plotController].importConfigData(path)
+                dlg.Destroy()
 
 
     def plotChanged(self, event):
