@@ -189,8 +189,15 @@ class PlotController:
                         temp_state.append(state)
                 print "Finish loading states"
                 for i in range(length+2, len(content)):
-                    print content[i]
-                    temp_landmark.append([float(content[i][0]), float(content[i][1]), int(content[i][2]), bool(content[i][3]), content[i][4]])
+                    # states exists
+                    if len(content[i]) == 5:
+                        temp_landmark.append([float(content[i][0]), float(content[i][1]), int(content[i][2]), bool(content[i][3]), content[i][4]])
+                    # no states
+                    else:
+                        temp_landmark.append([float(content[i][0]), float(content[i][1]), int(content[i][2]), bool(content[i][3]), []])
+                            
+                            
+                print "Finish loading landmarks"
             except:
                     print "Error in reading this file"
                     return
