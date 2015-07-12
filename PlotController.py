@@ -42,7 +42,7 @@ class PlotController:
 
             self.landmark_list.append([current_frame, round(y, 2), qs_index, audioflag, state])
             self.plotView.draw_landmark(current_frame,round(y, 2))
-
+            
                 
     def add_quantile_section(self,lower, upper, desc='', color='yellow'):
         self.quantile_section.append([lower, upper, desc, color])
@@ -64,7 +64,7 @@ class PlotController:
     # at least for point should be in the array
     def fit_curve(self):
         if len(self.landmark_list) >= 4:
-            self.update()
+            #self.update()
             self.plotView.draw_curve(self.landmark_list, kind)
 
     def remove_landmark(self, landmark):
@@ -88,15 +88,15 @@ class PlotController:
         self.update()
     
     def update(self):
-
         self.plotView.draw(self.quantile_section, self.landmark_list)
-    
+        self.plotView.update()
 
 
     def showFramePos(self, current_frame):
-        self.update()
+        plt.cla()
         self.plotView.draw_line(current_frame, 100, current_frame, -100)
-
+        self.update()
+    
     def setPlotSize(self, width, height):
         pass
     

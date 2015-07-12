@@ -20,7 +20,7 @@ class PlotView:
         self.axes = fig.add_axes([.05,.05,0.9,0.9], label='videos id: %d'%(_id))
         self.axes.grid(True)
         self.draw_axis()
-
+        self.update()
 
 
 
@@ -35,13 +35,13 @@ class PlotView:
     def set_axis_size(self, width, height):
         pass
 
+
+
+
     def draw_landmark(self, x, y):
         self.axes.plot(x, y, 'or')
-        fig = plt.figure(self.id)
-        fig.canvas.draw()
-
-
-
+    
+    
     def draw_axis(self):
         self.axes.set_xlim([0, self.nframes])
         self.axes.set_ylim([self.lower,self.upper])
@@ -50,9 +50,7 @@ class PlotView:
         
         plt.yticks(np.linspace(-100,100,21))
         
-        
-        fig = plt.figure(self.id)
-        fig.canvas.draw()
+
     
     def draw_quantile_section(self, lower, upper, level='', color='yellow'):
         xrange = [(0, self.nframes)]
@@ -62,15 +60,14 @@ class PlotView:
         c = collections.BrokenBarHCollection(xrange, yrange, facecolor=color, alpha = 0.1)
         self.axes.text(self.nframes/2, lower,level, fontsize=15, ha='center', alpha = 0.2)
         self.axes.add_collection(c)
-        fig = plt.figure(self.id)
-        fig.canvas.draw()
+
 
     def draw_line(self, x1, y1, x2, y2):
         l =  Line2D([x1,x1],[y1,y2], linestyle='--',color = 'black')
         self.axes.add_line(l)
-        fig = plt.figure(self.id)
-        fig.canvas.draw()
-            
+
+
+
     def draw_curve(self, landmark_list = [], _kind = 'cubic'):
         x = []
         y = []
@@ -81,8 +78,7 @@ class PlotView:
         
         xnew = np.linspace(min(x), max(x), max(x))
         self.axes.plot(xnew,f(xnew),'-')
-        fig = plt.figure(self.id)
-        fig.canvas.draw()
+
     
             
     def draw(self, quantile_section=[], landmark=[]):
@@ -95,9 +91,18 @@ class PlotView:
         #draw landmark
         for la in landmark:
             self.draw_landmark(la[0], la[1])
-
+        self.update()
+            
+            
+            
+    def update(self):
+        fig = plt.figure(self.id)
+        fig.canvas.draw()
+    
+    
     def close(self):
         plt.close('all')
+
 
 
 if __name__ == '__main__':
