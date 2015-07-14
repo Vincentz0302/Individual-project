@@ -94,8 +94,8 @@ class PlotController:
 
     def showFramePos(self, current_frame):
         plt.cla()
-        self.plotView.draw_line(current_frame, 100, current_frame, -100)
         self.update()
+        self.plotView.draw_line(current_frame, 100, current_frame, -100)
     
     def setPlotSize(self, width, height):
         pass
@@ -139,6 +139,7 @@ class PlotController:
 
 
     def importConfigData(self, path):
+
         with open(path, 'rb') as csvfile:
             filereader = csv.reader(csvfile)
 
@@ -147,21 +148,23 @@ class PlotController:
                 content.append(row)
             try:
                 length = int(content[0][0])
-                
                 origin_qs = self.quantile_section
                 origin_states = self.state
                 
+                temp_quantile_section = []
+                
                 self.quantile_section = []
                 self.state = []
-                self.update()
                 for i in range(1, length+1):
-                    self.add_quantile_section(int(content[i][0]), int(content[i][1]), content[i][2], content[i][3])
+                    temp_quantile_section.append([int(content[i][0]), int(content[i][1]), content[i][2], content[i][3]])
+                self.quantile_section = temp_quantile_section
                 print "Finish loading quantile sections"
                 # if the states are not null
                 if content[length+1]:
                     for state in content[length+1]:
                         self.add_state(state)
                 print "Finish loading states"
+                self.update()
             except:
                 #roll back if fail to read
                 self.quantile_section = origin_qs

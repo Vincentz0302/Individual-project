@@ -50,6 +50,7 @@ class ToolController():
         
         
         self.mainView.Bind(wx.EVT_BUTTON, self.onPlay, self.mainView.playButton)
+        self.mainView.Bind(wx.EVT_BUTTON, self.onPause, self.mainView.pauseButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.onStop, self.mainView.stopButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.showPreview, self.mainView.previewButton)
         self.mainView.Bind(wx.EVT_BUTTON, self.show_current_position, self.mainView.showCurPosButton)
@@ -67,6 +68,7 @@ class ToolController():
         self.mainView.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.plotChanged)
     
         self.mainView.Bind(wx.EVT_CHECKBOX, self.setAudioOff)
+    
     
     def setAudioOff(self, evt):
         if self.mainView.audioOff.GetValue():
@@ -86,17 +88,11 @@ class ToolController():
             self.mainView.audioOff.SetValue(False)
 
     def onPlay(self, evt):
-        state = self.mainView.mc.GetState()
-        #the video is in pause or stop state
-        if state == 0 or state == 1:
-            self.mainView.mc.Play()
-            self.mainView.playButton.SetLabel("Pause")
-        else:
-            self.mainView.mc.Pause()
-            self.mainView.playButton.SetLabel("Play")
+        self.mainView.mc.Play()
             
     def onPause(self, evt):
         self.mainView.mc.Pause()
+    
     def onStop(self, evt):
         self.mainView.mc.Stop()
     def onSeek(self, evt):

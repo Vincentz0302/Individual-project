@@ -43,7 +43,7 @@ class MainView(wx.Panel):
         # video player related
         #self.loadButton = wx.Button(self, -1, "Load File")
         self.playButton = wx.Button(self, -1, "Play")
-        #self.pauseButton = wx.Button(self, -1, "Pause")
+        self.pauseButton = wx.Button(self, -1, "Pause")
         self.stopButton = wx.Button(self, -1, "Stop")
         #self.exportButton = wx.Button(self, -1, "Export")
         #self.importButton = wx.Button(self, -1, "Import")
@@ -138,7 +138,8 @@ class MainView(wx.Panel):
         x_offset = 90
         y_offset = 15
         self.playButton.SetPosition((x, y))
-        self.stopButton.SetPosition((x+x_offset, y))
+        self.pauseButton.SetPosition((x+x_offset, y))
+        self.stopButton.SetPosition((x+2*x_offset, y))
 
         #self.sizer.Add(self.loadButton, (3,1))
         #self.sizer.Add(self.playButton, (4,1))

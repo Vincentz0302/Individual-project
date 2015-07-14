@@ -66,7 +66,6 @@ class PlotView:
         self.axes.add_line(l)
         self.update()
     
-    
     def draw_curve(self, landmark_list = [], _kind = 'cubic'):
         x = []
         y = []
