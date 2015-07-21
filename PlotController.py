@@ -27,8 +27,9 @@ class PlotController:
             if y >=qs[0] and y < qs[1]:
                 qs_index = self.quantile_section.index(qs)
         for landmark in self.landmark_list:
-            if int(landmark[0]) == int(current_frame):
+            if abs(landmark[0] - current_frame)<1:
                 index = self.landmark_list.index(landmark)
+                self.landmark_list[index][0] = current_frame
                 self.landmark_list[index][1] = round(y,2)
                 self.landmark_list[index][4] = state
                 flag = True

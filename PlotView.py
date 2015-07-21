@@ -97,11 +97,10 @@ class PlotView:
         #draw landmark
         for la in landmark:
             self.axes.plot(la[0], la[1], 'or')
-        self.update()
-
 
 
     def update(self):
+        print "update %d"%(self.id)
         fig = plt.figure(self.id)
         fig.canvas.draw()
     

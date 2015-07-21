@@ -9,6 +9,15 @@ from PlotController import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_wxagg import Toolbar, FigureCanvasWxAgg
 from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg
+from matplotlib import animation
+
+
+def posIndicate2(i):
+    print "running 2"
+    x = np.linspace(i,i)
+    y = np.linspace(-100,100)
+    line2.set_data(x,y)
+    return line2,
 
 class ToolController():
     def __init__(self, parent, id):
@@ -37,6 +46,7 @@ class ToolController():
         self.timer.Start(100)
         self.fps = 1
         self.previewImage = []
+        self.vid_path = ""
     
     def connect(self, parent):
         
@@ -101,10 +111,12 @@ class ToolController():
     
     def onTimer(self, evt):
         offset = self.mainView.mc.Tell()
+        self.current_frame = self.mainView.mc.Tell() * self.fps / 1000
         self.mainView.slider.SetValue(offset)
         self.mainView.st_size.SetLabel('size: %s ms' % self.mainView.mc.Length())
         self.mainView.st_len.SetLabel('( %d seconds )' % (self.mainView.mc.Length()/1000))
         self.mainView.st_pos.SetLabel('position: %d frame' % (int(offset*self.fps/1000)))
+
 
     def onLoadFile(self, evt):
         dlg = wx.FileDialog(self.mainView, message="Choose a media file",
@@ -121,8 +133,11 @@ class ToolController():
     def doLoadFile(self, path):
         if not self.mainView.mc.Load(path):
             wx.MessageBox("Unable to load %s: Unsupported format?" % path, "ERROR", wx.ICON_ERROR | wx.OK)
+            self.mainView.mc.Load(self.vid_path)
         else:
+            self.vid_path = path
             folder, filename = os.path.split(path)
+            self.mainView.vid_name.SetLabel(filename)
             self.cv_capture = cv2.VideoCapture(path)
             self.fps = self.cv_capture.get(cv.CV_CAP_PROP_FPS)
             self.mainView.slider.SetRange(0, self.mainView.mc.Length())
@@ -130,30 +145,55 @@ class ToolController():
             self.mainView.volumeSlider.SetRange(0, 100)
             self.mainView.mc.SetVolume(self.currentVolume)
             self.mainView.volumeSlider.SetValue(self.currentVolume)
-    
-    
+            if self.currentVolume > 0:
+                self.mainView.audioOff.SetValue(False)
+            else:
+                self.mainView.audioOff.SetValue(True)
             self.doLoadPlot()
 
 
     def doLoadPlot(self):
+        fig1 = plt.figure(1)
+        fig2 = plt.figure(2)
         if self.loadFlag:
             del self.plotController
             self.plotController = []
-            fig1 = plt.figure(1)
-            fig2 = plt.figure(2)
             fig1.clf()
             fig2.clf()
+        
         valence_plotController = PlotController(1, self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT),'')
         arousal_plotController = PlotController(2, self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT),'')
+        
+        
         #fig1 = plt.figure(0)
-        self.current_plotController = 0
+        self.current_plotController = self.mainView.plot_notebook.GetSelection()
         self.loadFlag = True
         self.plotController.append(valence_plotController)
         self.plotController.append(arousal_plotController)
+
+        global line1
+        global line2
+
+        self.current_frame = 0
+        #line1, = self.plotController[0].plotView.axes.plot([],[],lw = 1)
+        #line2, = self.plotController[1].plotView.axes.plot([],[],lw = 1)
+        #animpos1 = animation.FuncAnimation(fig1, self.posIndicate1, interval = 1000, blit=False, repeat = True)
+        #
+            #framepos2 = animation.FuncAnimation(fig2, posIndicate2, fargs = (self.mainView.mc.Tell() * self.fps / 1000),
+            #                                                                    interval=10, blit=False)
         #self.toolbar =Toolbar(self.canvas)
         #self.mainView.SetSizer(self.mainView.sizer)
+        #self.plotController[0].plotView.update()
         self.mainView.Layout()
-
+        
+    def posIndicate1(self, i):
+        #print "running 1"
+        #print self.current_frame
+        pos = self.current_frame
+        x = np.linspace(pos, pos)
+        y = np.linspace(-100,100)
+        line1.set_data(x,y)
+        return line1,
 
     def RepresentsInt(self,s):
         try:
@@ -168,7 +208,7 @@ class ToolController():
         if self.loadFlag:
             offset = self.mainView.mc.Tell()
             current_frame = offset*self.fps/1000
-            self.plotController[self.current_plotController].showFramePos(current_frame)
+            self.plotController[self.current_plotController].showFramePos(self.current_frame)
 
     def add_quantile_section(self, evt):
         if self.loadFlag:
@@ -205,8 +245,8 @@ class ToolController():
                 self.mainView.add_check_box(_state)
                 self.mainView.textField5.SetValue("")
 
-    def show_landmark(self, current_frame, state_list):
-        self.cv_capture.set(cv.CV_CAP_PROP_POS_FRAMES, current_frame)
+    def show_landmark(self, landmark_pos, state_list):
+        self.cv_capture.set(cv.CV_CAP_PROP_POS_FRAMES, landmark_pos)
         pos = self.cv_capture.get(cv.CV_CAP_PROP_POS_MSEC)
         self.mainView.mc.Seek(pos)
         for cb in self.mainView.stateCheckBox:
@@ -218,12 +258,11 @@ class ToolController():
 
 
     def onClick(self, evt):
-        print "Click"
         #self.current_plotController = self.mainView.plot_notebook.GetSelection()
         if self.loadFlag and evt.xdata and evt.ydata:
             pos = self.mainView.mc.Tell()
             self.cv_capture.set(cv.CV_CAP_PROP_POS_MSEC, pos)
-            current_frame = self.cv_capture.get(cv.CV_CAP_PROP_POS_FRAMES)
+            self.current_frame = self.cv_capture.get(cv.CV_CAP_PROP_POS_FRAMES)
             state_list = []
             audioflag = self.mainView.audioOff.GetValue()
             offset = self.cv_capture.get(cv.CV_CAP_PROP_FRAME_COUNT) * 0.002
@@ -232,8 +271,8 @@ class ToolController():
             for landmark in self.plotController[self.current_plotController].landmark_list:
                 if landmark[0] > evt.xdata - offset and landmark[0] < evt.xdata + offset and landmark[1] > evt.ydata - offset and landmark[1] < evt.ydata + offset:
                     temp_landmark = landmark
-                    #print "landmark clicked!!"
-                    #print landmark
+                    print "landmark clicked!!"
+                    print landmark
                     break
             #if left click
             if evt.button == 1:
@@ -242,7 +281,7 @@ class ToolController():
                         state_list.append(cb.GetLabel())
                 #no landmark is clicked
                 if not temp_landmark:
-                    self.plotController[self.current_plotController].add_landmark(current_frame, evt.ydata, audioflag, state_list)
+                    self.plotController[self.current_plotController].add_landmark(self.current_frame, evt.ydata, audioflag, state_list)
                 else:
                     self.show_landmark(temp_landmark[0], temp_landmark[4])
             #if right click
@@ -251,7 +290,9 @@ class ToolController():
                     self.plotController[self.current_plotController].remove_landmark(landmark)
 
 
-#print self.plotController[self.current_plotController].landmark_list
+
+                        
+
 
 
     def showPreview(self, evt):
@@ -311,6 +352,7 @@ class ToolController():
                             style=wx.OPEN | wx.CHANGE_DIR )
             if dlg.ShowModal() == wx.ID_OK:
                 path = dlg.GetPath()
+                print self.current_plotController
                 self.plotController[self.current_plotController].importData(path)
                 dlg.Destroy()
 
@@ -324,11 +366,20 @@ class ToolController():
                 path = dlg.GetPath()
                 self.plotController[self.current_plotController].importConfigData(path)
                 dlg.Destroy()
+                #animpos1 = animation.FuncAnimation(fig1, self.posIndicate1, interval = 1000, blit=False, repeat = True)
+    #
+    #framepos2 = animation.FuncAnimation(fig2, posIndicate2, fargs = (self.mainView.mc.Tell() * self.fps / 1000),
+    #                                                                    interval=10, blit=False)
+    #self.toolbar =Toolbar(self.canvas)
+    #self.mainView.SetSizer(self.mainView.sizer)
+
 
 
     def plotChanged(self, event):
         self.current_plotController = self.mainView.plot_notebook.GetSelection()
         event.Skip()
+
+
 
 
 

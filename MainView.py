@@ -64,6 +64,7 @@ class MainView(wx.Panel):
         self.st_size = wx.StaticText(self.infoPanel, -1, size=(1,-1), pos = (605,5))
         self.st_len  = wx.StaticText(self.infoPanel, -1, size=(1,-1), pos = (605, 30))
         self.st_pos  = wx.StaticText(self.infoPanel, -1, size=(1,-1), pos = (605, 55))
+        self.vid_name = wx.StaticText(self.infoPanel, -1, size=(1,-1),pos = (200, 10))
         self.volumeSlider = wx.Slider(self.infoPanel, -1, 0, 0, 0, size=(400, -1), pos =(5,55) )
         self.audioOff = wx.CheckBox(self.infoPanel, -1, "Audio off", pos = (500, 55))
 
