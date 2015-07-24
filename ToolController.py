@@ -111,7 +111,10 @@ class ToolController():
     
     def onTimer(self, evt):
         offset = self.mainView.mc.Tell()
-        self.current_frame = self.mainView.mc.Tell() * self.fps / 1000
+        pos = self.mainView.mc.Tell() * self.fps / 1000
+        self.current_frame = pos
+        self.plotController[0].current_frame = pos
+        self.plotController[1].current_frame = pos
         self.mainView.slider.SetValue(offset)
         self.mainView.st_size.SetLabel('size: %s ms' % self.mainView.mc.Length())
         self.mainView.st_len.SetLabel('( %d seconds )' % (self.mainView.mc.Length()/1000))
@@ -171,23 +174,15 @@ class ToolController():
         self.plotController.append(valence_plotController)
         self.plotController.append(arousal_plotController)
 
-        global line1
-        global line2
 
         self.current_frame = 0
-        #line1, = self.plotController[0].plotView.axes.plot([],[],lw = 1)
-        #line2, = self.plotController[1].plotView.axes.plot([],[],lw = 1)
-        #animpos1 = animation.FuncAnimation(fig1, self.posIndicate1, interval = 1000, blit=False, repeat = True)
-        #
-            #framepos2 = animation.FuncAnimation(fig2, posIndicate2, fargs = (self.mainView.mc.Tell() * self.fps / 1000),
-            #                                                                    interval=10, blit=False)
         #self.toolbar =Toolbar(self.canvas)
         #self.mainView.SetSizer(self.mainView.sizer)
         #self.plotController[0].plotView.update()
         self.mainView.Layout()
         
     def posIndicate1(self, i):
-        #print "running 1"
+        print "running 1"
         #print self.current_frame
         pos = self.current_frame
         x = np.linspace(pos, pos)
@@ -261,6 +256,7 @@ class ToolController():
         #self.current_plotController = self.mainView.plot_notebook.GetSelection()
         if self.loadFlag and evt.xdata and evt.ydata:
             pos = self.mainView.mc.Tell()
+            print "click event on %f"%(pos)
             self.cv_capture.set(cv.CV_CAP_PROP_POS_MSEC, pos)
             self.current_frame = self.cv_capture.get(cv.CV_CAP_PROP_POS_FRAMES)
             state_list = []
@@ -281,6 +277,7 @@ class ToolController():
                         state_list.append(cb.GetLabel())
                 #no landmark is clicked
                 if not temp_landmark:
+                    print "adding a land mark on %f, %f "%(self.current_frame, evt.ydata)
                     self.plotController[self.current_plotController].add_landmark(self.current_frame, evt.ydata, audioflag, state_list)
                 else:
                     self.show_landmark(temp_landmark[0], temp_landmark[4])

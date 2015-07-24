@@ -5,8 +5,12 @@ import numpy as np
 from operator import itemgetter
 from PlotView import *
 import csv
+from matplotlib import animation
+
 global kind
 kind = 'cubic'
+global interval
+interval = 10
 
 class PlotController:
 
@@ -15,6 +19,20 @@ class PlotController:
         self.quantile_section = []
         self.landmark_list=[]
         self.state = []
+        
+        self.line, = self.plotView.axes.plot([],[],lw = 1)
+        self.current_frame = 0
+        fig1 = plt.figure(_id)
+        self.animpos = animation.FuncAnimation(fig1, self.posIndicate, interval, blit=False, repeat = True)
+        self.update()
+
+    def posIndicate(self, i):
+        print "running 1"
+        pos = self.current_frame
+        x = np.linspace(pos, pos)
+        y = np.linspace(-100,100)
+        self.line.set_data(x,y)
+        return self.line,
 
     def add_landmark(self, current_frame, y, audioflag = True, state=[], ):
         
@@ -42,7 +60,7 @@ class PlotController:
             #the landmark is newly added so just draw the landmark
 
             self.landmark_list.append([current_frame, round(y, 2), qs_index, audioflag, state])
-            self.plotView.draw_landmark(current_frame,round(y, 2))
+            self.update()
             
                 
     def add_quantile_section(self,lower, upper, desc='', color='yellow'):
@@ -65,7 +83,8 @@ class PlotController:
     # at least for point should be in the array
     def fit_curve(self):
         if len(self.landmark_list) >= 4:
-            #self.update()
+            plt.cla()
+            self.update()
             self.plotView.draw_curve(self.landmark_list, kind)
 
     def remove_landmark(self, landmark):
@@ -91,6 +110,7 @@ class PlotController:
     def update(self):
         self.plotView.draw(self.quantile_section, self.landmark_list)
         self.plotView.update()
+        self.line, = self.plotView.axes.plot([],[],lw = 1)
 
 
     def showFramePos(self, current_frame):
@@ -223,6 +243,6 @@ if __name__ == '__main__':
     pc1.showFramePos(40)
     pc1.showFramePos(80)
     #pc2 = PlotController(2, 500, 'Arousal')
-    pc1.importData("/Users/zhangyuxun/Desktop/Project Data/python/valence.csv")
+    #pc1.importData("/Users/zhangyuxun/Desktop/Project Data/python/valence.csv")
     plt.show()
 

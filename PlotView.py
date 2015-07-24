@@ -100,7 +100,6 @@ class PlotView:
 
 
     def update(self):
-        print "update %d"%(self.id)
         fig = plt.figure(self.id)
         fig.canvas.draw()
     
@@ -117,7 +116,7 @@ if __name__ == '__main__':
     plt.rcParams["figure.figsize"] = fig_size
     view1 = PlotView(1,2339, 'Happy')
     view2 = PlotView(2,2339,'Arousal')
-    view1.set_visible(True)
+    #   view1.set_visible(True)
     view2.set_visible(True)
     view2.draw_quantile_section(50,80,'pos', 'yellow')
     l = [[1,3],[8,22],[33,10],[40, 8],[59,12]]
@@ -128,8 +127,8 @@ if __name__ == '__main__':
     
     plt.show()
     view2.draw_quantile_section(-50,50,'regular', 'blue')
-    view2.draw_quantile_section(80,100,'very pos','green')
-    view2.draw_landmark(100,50)
+    #view2.draw_quantile_section(80,100,'very pos','green')
+#view2.draw_landmark(100,50)
 
 
 
